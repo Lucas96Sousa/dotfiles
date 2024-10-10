@@ -1,0 +1,617 @@
+#+title: Emacs do Zero (EDZ)
+#+author: Lucas Sousa
+#+startup: show2levels
+
+* Preparação
+
+- Instalar o Emacs
+- Criar arquivo =~/.config/emacs/init.el=
+- Criar o arquivo =~/.config/emacs/config.org=
+
+** Conteúdo de =init.el=
+
+#+begin_example
+(org-babel-load-file
+  (expand-file-name "config.org" user-emacs-directory))
+#+end_example
+
+* Configurações gerais
+** Desabilitar tela de início (scratch)
+
+#+begin_src emacs-lisp
+(setq inhibit-startup-message t)
+#+end_src
+
+** Configuração da interface (UI)
+
+#+begin_src emacs-lisp
+(menu-bar-mode -1)            ; no menu bar
+(tool-bar-mode -1)            ; no tools bar
+(scroll-bar-mode -1)          ; no scroll bars
+(tooltip-mode -1)             ; no tooltips
+(set-fringe-mode 10)          ; frame edges set to 10px
+(column-number-mode 1)        ; modeline shows column number
+(save-place-mode 1)           ; remember cursor position
+(recentf-mode 1)              ; remember recent files
+(savehist-mode 1)             ; enable history saving
+#+end_src
+
+** Numeração de linhas
+
+#+begin_src emacs-lisp
+(global-display-line-numbers-mode 1)
+(setq display-line-numbers-type 'relative) 
+(dolist (mode '(org-mode-hook
+                vterm-mode-hook
+                term-mode-hook
+                shell-mode-hook
+                eshell-mode-hook))
+  (add-hook mode (lambda () (display-line-numbers-mode 0)))) 
+#+end_src
+
+** Usar espaços em vez de tabulações
+
+#+begin_src emacs-lisp
+(setq-default indent-tabs-mode nil) 
+#+end_src
+
+** Deletar texto selecionado ao digitar
+
+#+begin_src emacs-lisp
+(delete-selection-mode t)
+#+end_src
+
+** Destaque da linha corrente
+
+#+begin_src emacs-lisp
+(global-hl-line-mode 1) 
+#+end_src
+
+** Quebra de linha visual
+
+#+begin_src emacs-lisp
+(global-visual-line-mode t) 
+#+end_src
+
+** Carregar alterações externas
+
+#+begin_src emacs-lisp
+(global-auto-revert-mode t) 
+#+end_src
+
+** Prompt de confirmação
+
+#+begin_src emacs-lisp
+(fset 'yes-or-no-p 'y-or-n-p) ;
+#+end_src
+
+** Habilita o fechamento de pares
+
+#+begin_src emacs-lisp
+(electric-pair-mode 1) 
+#+end_src
+
+** Sai do minibuffer com ESC
+
+#+begin_src emacs-lisp
+(global-set-key (kbd "<escape>") 'keyboard-escape-quit) 
+#+end_src
+
+** Atalhos para zoom
+
+#+begin_src emacs-lisp
+(global-set-key (kbd "C-=") 'text-scale-increase) 
+(global-set-key (kbd "C--") 'text-scale-decrease) 
+#+end_src
+
+* Sistema
+** Backup
+
+#+begin_src emacs-lisp
+(setq backup-directory-alist '((".*" . "~/.local/share/Trash/files")))
+#+end_src
+
+** Custom settings
+
+#+begin_src emacs-lisp
+(setq custom-file (locate-user-emacs-file "custom.el"))
+(load custom-file 'noerror 'nomessage)
+#+end_src
+
+* Fontes
+#+begin_src emacs-lisp
+(set-face-attribute 'default nil :font "JetBrainsMonoNL 16")
+(set-face-attribute 'variable-pitch nil :font "JetBrainsMonoNL 16")
+(set-face-attribute 'fixed-pitch nil :font "JetBrainsMonoNL 16")
+#+end_src
+* Funções
+** Recarga das configurações
+#+begin_src emacs-lisp
+(defun dre/reload-settings()
+  (interactive)
+  (load-file "~/.config/emacs/init.el"))
+#+end_src
+
+** Abrir config.org
+#+begin_src emacs-lisp
+(defun dre/open-emacs-config()
+  (interactive)
+  (find-file "~/.config/emacs/config.org"))
+#+end_src
+
+** Abrir diretório de configurações pessoais
+#+begin_src emacs-lisp
+(defun dre/emacs-personal-files ()
+   (interactive)
+   (let ((default-directory "~/.config/emacs/"))
+     (call-interactively 'find-file)))
+#+end_src
+
+* Gerenciamento de pacotes
+** Configuração do package
+#+begin_src emacs-lisp
+(require 'package)
+(setq package-archives '(("melpa" . "https://melpa.org/packages/")
+          ("elpa" . "https://elpa.gnu.org/packages/")))
+(package-initialize)
+(unless package-archive-contents
+  (package-refresh-contents))
+#+end_src
+
+** Configuração do use-package
+
+#+begin_src emacs-lisp
+(unless (package-installed-p 'use-package)
+  (package-install 'use-package))
+(require 'use-package)
+(setq use-package-always-ensure t)
+#+end_src
+
+* Pacotes
+** Evil Mode
+#+begin_src emacs-lisp
+(use-package evil
+    :init
+    (setq evil-want-integration t
+          evil-want-keybinding nil
+          evil-vsplit-window-right t
+          evil-split-window-below t
+          evil-undo-system 'undo-redo)
+    (evil-mode))
+
+(use-package evil-collection
+  :after evil
+  :config
+  (add-to-list 'evil-collection-mode-list 'help)
+  (evil-collection-init)) 
+#+end_src
+
+** Keycast
+
+#+begin_src emacs-lisp
+;; (use-package keycast
+;;   :init
+;;   (add-to-list 'global-mode-string '("" mode-line-keycast))
+;;   (keycast-mode-line-mode))
+#+end_src
+
+** Vertico
+
+#+begin_src emacs-lisp
+  (use-package vertico
+    :bind (:map vertico-map
+                ("C-j" . vertico-next)
+                ("C-k" . vertico-previous)
+                ("C-f" . vertico-exit)
+                :map minibuffer-local-map
+                ("M-h" . backward-kill-word))
+    :custom
+    (vertico-cycle t)
+    :init
+    (vertico-mode))
+#+end_src
+
+** Marginalia
+
+Informações adicionais nas seleções.
+
+#+begin_src emacs-lisp
+  (use-package marginalia
+    :after vertico
+    :custom
+    (marginalia-annotators '(marginalia-annotators-heavy marginalia-annotators-ligh nil))
+    :init
+    (marginalia-mode))
+#+end_src
+
+** Orderless
+
+Busca /fuzzy/ no minibuffer.
+
+#+begin_src emacs-lisp
+(use-package orderless
+  :config
+  (setq completion-styles '(orderless basic)))
+#+end_src
+
+** Consult
+
+Funções úteis:
+
+- =consult-grep=: Grep recursivo.
+- =consult-find=: Busca recursiva de arquivos.
+- =consult-outline=: Busca entre cabeçalhos (/outline/).
+- =consult-line=: Busca entre as linhas do buffer.
+- =consult-buffer=: Circula entre os buffers abertos.
+
+#+begin_src emacs-lisp
+  (use-package consult)
+#+end_src
+
+** Which Key
+#+begin_src emacs-lisp
+(use-package which-key
+  :init
+    (which-key-mode 1)
+  :diminish
+  :config
+  (setq which-key-side-window-location 'bottom
+	  which-key-sort-order #'which-key-key-order-alpha
+	  which-key-allow-imprecise-window-fit nil
+	  which-key-sort-uppercase-first nil
+	  which-key-add-column-padding 1
+	  which-key-max-display-columns nil
+	  which-key-min-display-lines 6
+	  which-key-side-window-slot -10
+	  which-key-side-window-max-height 0.25
+	  which-key-idle-delay 0.8
+	  which-key-max-description-length 25
+	  which-key-allow-imprecise-window-fit nil
+	  which-key-separator " → " ))
+#+end_src
+** Doom Themes
+#+begin_src emacs-lisp
+  (use-package doom-themes
+    :config
+    (setq doom-themes-enable-bold t
+          doom-themes-enable-italic t)
+    ;; Sets the default theme to load!!! 
+    (load-theme 'doom-moonlight t)
+    ;; Corrects (and improves) org-mode's native fontification.
+    (doom-themes-org-config))
+#+end_src
+** Doom Modeline
+#+begin_src emacs-lisp
+  (use-package doom-modeline
+    :ensure t
+    :hook
+    (after-init . doom-modeline-mode)
+    :custom
+    (set-face-attribute 'mode-line nil :font "JetBrainsMonoNL" :height 110) 
+    (set-face-attribute 'mode-line-inactive nil :font "JetBrainsMonoNL" :height 110) 
+    :config
+    (setq doom-modeline-enable-word-count t))
+#+end_src
+
+** Diminish
+#+begin_src emacs-lisp
+  (use-package diminish)
+#+end_src
+
+** Company
+#+begin_src emacs-lisp
+  
+
+(use-package company
+  :ensure t
+  :defer 2
+  :diminish
+  :config
+  :custom
+  (company-begin-commands '(self-insert-command))
+  (company-idle-delay 0.1)
+  (company-minimum-prefix-length 2)
+  (company-show-numbers t)
+  (company-tooltip-align-annotations 't)
+  (global-company-mode t)) 
+
+(use-package company-box
+  :after company
+  :diminish
+  :hook (company-mode . company-box-mode))
+#+end_src
+
+** General - Atalhos
+#+begin_src emacs-lisp
+  (use-package general
+    :config
+    (general-evil-setup)
+    ;; set up 'SPC' as the global leader key
+    (general-create-definer dre/leader-keys
+      :states '(normal insert visual emacs)
+      :keymaps 'override
+      :prefix "SPC" ;; set leader
+      :global-prefix "M-SPC") ;; access leader in insert mode
+
+    (dre/leader-keys
+      "TAB TAB" '(comment-line :wk "Comment lines")) 
+
+    ;; Buffer/bookmarks
+    (dre/leader-keys
+      "b" '(:ignore t :wk "Buffers/Bookmarks")
+      "b b" '(switch-to-buffer :wk "Switch to buffer")
+      "b i" '(ibuffer :wk "Ibuffer")
+      "b k" '(kill-current-buffer :wk "Kill current buffer")
+      "b s" '(basic-save-buffer :wk "Save buffer")
+      "b l" '(list-bookmarks :wk "List bookmarks")
+      "b m" '(bookmark-set :wk "Set bookmark")
+      "q q" '(save-buffers-kill-terminal :wk "Quit emacs"))
+
+    ;; Files
+    (dre/leader-keys
+      "f" '(:ignore t :wk "Files")
+      "." '(find-file :wk "Find file")
+      "f f" '(find-file :wk "Find file")
+      "f p" '(dre/emacs-personal-files :wk "Open personal config files")
+      "f c" '(dre/open-emacs-config :wk "Open emacs config.org"))
+
+    ;; Helpers
+    (dre/leader-keys
+      "h" '(:ignore t :wk "Helpers")
+      "h r r" '(dre/reload-settings :wk "Reload emacs settings"))) 
+#+end_src
+** Flycheck
+#+begin_src emacs-lisp
+  (use-package flycheck
+  :hook
+  (prog-mode-hook . flycheck-mode)
+  (elpy-mode-hook . flycheckmode))
+#+end_src
+** Projectile
+#+begin_src emacs-lisp
+(use-package projectile
+  :diminish projectile-mode
+  :config
+  (projectile-mode))
+#+end_src
+** Linguagens
+*** Para usar o =pandoc= como comando, é necessário estar instalado no sistema
+
+#+begin_src emacs-lisp
+(use-package markdown-mode
+:commands (markdown-mode gfm-mode)
+:mode (("README\\.md\\'" . gfm-mode)
+       ("\\.md'" . gfm-mode)
+       ("\\.markdown'" . markdown-mode))
+:init (setq mark-downcommand "pandoc"))
+#+end_src
+*** Python
+#+begin_src emacs-lisp
+
+(add-hook 'python-mode-hook 'set-python-virtualenv)
+
+     (dre/leader-keys
+       :states '(normal visual emacs)
+       :keymaps 'override
+       "lp"  '(:ignore t :which-key "Python")
+       "lpv" '(set-python-virtualenv :which-key "Set Virtualenv")
+       "lpr" '(run-python :which-key "Run Python REPL")
+       "lpf" '(python-format-buffer :which-key "Format buffer")
+       "lpd" '(elpy-goto-definition :which-key "Go to definition"))
+#+end_src
+
+ #+end_src
+*** C/C++
+#+begin_src emacs-lisp
+
+#+end_src
+
+*** Yasnippet
+#+begin_src emacs-lisp
+(use-package yasnippet
+:ensure t
+:init
+(yas-global-mode 1))
+#+end_src
+
+*** LSP mode
+#+begin_src emacs-lisp
+(use-package lsp-mode
+:init
+(setq lsp-keymap-prefix "C-c l")
+:hook (
+      (python-mode . lsp)
+      (c-mode . lsp)
+      (c++-mode . lsp)
+      (lsp-mode . lsp-enable-which-key-integration))
+:commands lsp)
+
+;; option
+(use-package lsp-ui :commands lsp-ui-mode)
+
+
+(setq python-shell-interpreter "python3")
+#+end_src
+
+*** Completion frameworks
+#+begin_src emacs-lisp
+      (use-package vertico
+        :init
+        (vertico-mode +1))
+
+    (use-package orderless
+      :init
+      (setq completion-styles '(orderless)
+            completion-category-defaults nil
+            completion-category-overrides '((file (styles partial-completion)))))
+
+    ;; Persist history over Emacs restarts. Vertico sorts by history position.
+    (use-package savehist
+      :init
+      (savehist-mode))
+
+
+      (use-package marginalia
+        :config (marginalia-mode))
+
+      (use-package consult
+        :general
+        ("M-y" 'consult-yank-from-kill-ring
+         "C-x b" 'consult-buffer))
+    (recentf-mode)
+
+      (setq completion-ignore-case t)
+      (setq read-file-name-completion-ignore-case t)
+
+
+
+      (use-package orderless
+        :init
+        (setq completion-styles '(orderless)))
+
+      ;; (use-package company
+      ;;   :config
+      ;;   (setq company-idle-delay 0)
+      ;;   (setq company-minimum-prefix-length 3)
+      ;;   (global-company-mode t))
+
+
+(use-package corfu
+  ;; Optional customizations
+  :custom
+  (corfu-cycle t)                 ; Allows cycling through candidates
+  (corfu-auto t)                  ; Enable auto completion
+  (corfu-auto-prefix 2)
+  (corfu-auto-delay 0.0)
+  (corfu-echo-documentation 0.25) ; Enable documentation for completions
+  (corfu-preview-current 'insert) ; Do not preview current candidate
+  (corfu-preselect-first nil)
+  (corfu-on-exact-match nil)      ; Don't auto expand tempel snippets
+
+  ;; Optionally use TAB for cycling, default is `corfu-complete'.
+  :bind (:map corfu-map
+              ("M-SPC" . corfu-insert-separator)
+              ("TAB"     . corfu-next)
+              ([tab]     . corfu-next)
+              ("S-TAB"   . corfu-previous)
+              ([backtab] . corfu-previous)
+              ("S-<return>" . corfu-insert)
+              ("RET"     . nil) ;; leave my enter alone!
+              )
+
+  :init
+  (global-corfu-mode)
+  ;;(corfu-history-mode)
+
+  :config
+  (setq tab-always-indent 'complete)
+  (add-hook 'eshell-mode-hook
+            (lambda () (setq-local corfu-quit-at-boundary t
+                              corfu-quit-no-match t
+                              corfu-auto nil)
+              (corfu-mode))))
+
+
+    (use-package embark
+    :ensure t
+
+    :bind
+    (("C-." . embark-act)         ;; pick some comfortable binding
+     ("C-;" . embark-dwim)        ;; good alternative: M-.
+     ("C-h B" . embark-bindings)) ;; alternative for `describe-bindings'
+
+     :init
+
+     ;; Optionally replace the key help with a completing-read interface
+     (setq prefix-help-command #'embark-prefix-help-command)
+
+     :config
+
+     ;; Hide the mode line of the Embark live/completions buffers
+     (add-to-list 'display-buffer-alist
+                  '("\\`\\*Embark Collect \\(Live\\|Completions\\)\\*"
+                    nil
+                    (window-parameters (mode-line-format . none))))
+
+    )
+
+  ;; Consult users will also want the embark-consult package.
+  (use-package embark-consult
+    :ensure t
+    :after (embark consult)
+    :demand t ; only necessary if you have the hook below
+    ;; if you want to have consult previews as you move around an
+    ;; auto-updating embark collect buffer
+    :hook
+    (embark-collect-mode . consult-preview-at-point-mode))
+#+end_src
+** Setting up list-mode
+#+begin_src
+  pip install --user python-language-server[all]
+#+end_src
+
+** Magit
+#+begin_src emacs-lisp
+(use-package magit)
+#+end_src
+** Org mode
+#+begin_src emacs-lisp
+  (add-hook 'org-mode-hook (lambda ()
+             (setq-local electric-pair-inhibit-predicate
+                     `(lambda (c)
+                    (if (char-equal c ?<) t (,electric-pair-inhibit-predicate c))))))
+#+end_src
+
+** Indentação de blocos
+#+begin_src emacs-lisp
+  (setq org-edit-src-content-indentation 0) ; Zera a margem dos blocos
+  (electric-indent-mode 1) ; Desliga a indentação automática
+#+end_src
+** Template de blocos
+#+begin_src emacs-lisp
+(require 'org-tempo)
+#+end_src
+** lets
+#+begin_src emacs-lisp
+(add-hook 'org-mode-hook 'org-indent-mode)
+(use-package org-bullets
+:custom
+(org-bullets-bullet-list '("▶" "▷" "◆" "◇" "▪" "▪" "▪"))) 
+(add-hook 'org-mode-hook (lambda () (org-bullets-mode 1)))
+#+end_srcVterm
+Dependências para compilar:
+
+- ~cmake~
+- ~libtool-bin~
+- ~libvterm-dev~
+  
+#+begin_src emacs-lisp
+(use-package vterm
+:config
+(setq shell-file-name "/bin/bash"
+      vterm-max-scrollback 5000)) 
+#+end_src
+** Rainbow Delimiters
+#+begin_src emacs-lisp
+  (use-package rainbow-delimiters
+    :hook ((prog-mode . rainbow-delimiters-mode)
+           (emacs-lisp-mode . rainbow-delimiters-mode)
+           (clojure-mode . rainbow-delimiters-mode)))
+#+end_src
+** Rainbow Mode
+
+#+begin_src emacs-lisp
+(use-package rainbow-mode
+  :diminish
+  :hook org-mode prog-mode)
+#+end_src
+** Treemacs
+#+begin_src emacs-lisp
+          (use-package treemacs
+        :bind
+      (:map global-map ("M-\\" . treemacs))
+    :config
+    (setq treemacs-no-png-images t
+  treemacs-is-never-other-window nil))
+#+end_src
+
