@@ -282,13 +282,13 @@ Funções úteis:
 #+end_src
 ** Doom Modeline
 #+begin_src emacs-lisp
-  (use-package doom-modeline
+(use-package doom-modeline
     :ensure t
     :hook
     (after-init . doom-modeline-mode)
     :custom
-    (set-face-attribute 'mode-line nil :font "JetBrainsMonoNL" :height 110) 
-    (set-face-attribute 'mode-line-inactive nil :font "JetBrainsMonoNL" :height 110) 
+    (set-face-attribute 'mode-line nil :font "Symbols Nerd Fonts Mono" :height 110) 
+    (set-face-attribute 'mode-line-inactive nil :font "Symbols Nerd Fonts Mono" :height 110) 
     :config
     (setq doom-modeline-enable-word-count t))
 #+end_src
@@ -425,23 +425,19 @@ Funções úteis:
 
 ;;; Languages Server Protocol(LSP)
 
-(use-package eglot
-  :defer t
-  :bind (:map eglot-mode-map
-              ("C-c l a" . eglot-code-actions)
-              ("C-c l r" . eglot-rename)
-              ("C-c l f" . eglot-format)
-              ("C-c l d" . eldoc))
-  :custom (eglot-report-progress nil)
-  :config
-  (setq read-process-output-max (* 1024 1024))
-  (setq eglot-events-buffer-size 0))
+;; (use-package eglot
+;;   :defer t
+;;   :bind (:map eglot-mode-map
+;;               ("C-c l a" . eglot-code-actions)
+;;               ("C-c l r" . eglot-rename)
+;;               ("C-c l f" . eglot-format)
+;;               ("C-c l d" . eldoc))
+;;   )
 
-(use-package breadcrumb
+ (use-package breadcrumb
   :config (breadcrumb-mode))
 
-(add-hook 'python-mode-hook 'set-python-virtualenv)
-#+end_src
+(add-hook 'python-mode-hook 'eglot-ensure)
 
  #+end_src
 *** C/C++
