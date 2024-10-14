@@ -441,15 +441,6 @@ Funções úteis:
   :config (breadcrumb-mode))
 
 (add-hook 'python-mode-hook 'set-python-virtualenv)
-
-     (dre/leader-keys
-       :states '(normal visual emacs)
-       :keymaps 'override
-       "lp"  '(:ignore t :which-key "Python")
-       "lpv" '(set-python-virtualenv :which-key "Set Virtualenv")
-       "lpr" '(run-python :which-key "Run Python REPL")
-       "lpf" '(python-format-buffer :which-key "Format buffer")
-       "lpd" '(elpy-goto-definition :which-key "Go to definition"))
 #+end_src
 
  #+end_src
